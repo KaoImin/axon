@@ -12,7 +12,7 @@ use protocol::trie::Trie as _;
 use protocol::types::{
     Account, Eip1559Transaction, ExecResp, ExecutorContext, Hash, Hasher, SignedTransaction,
     TxResp, UnsignedTransaction, UnverifiedTransaction, H160, H256, MAX_BLOCK_GAS_LIMIT, NIL_DATA,
-    RLP_NULL, U256,
+    RLP_NULL, U256, U64,
 };
 
 use core_db::RocksAdapter;
@@ -109,8 +109,8 @@ impl EvmDebugger {
         .unwrap()
     }
 
-    fn nonce(&self, addr: H160) -> U256 {
-        self.backend(0).basic(addr).nonce
+    fn nonce(&self, addr: H160) -> U64 {
+        self.backend(0).basic(addr).nonce.low_u64().into()
     }
 }
 
@@ -124,12 +124,13 @@ impl EventListener for EvmListener {
 }
 
 pub fn mock_signed_tx(tx: Eip1559Transaction, sender: H160) -> SignedTransaction {
-    let utx = UnverifiedTransaction {
-        unsigned:  UnsignedTransaction::Eip1559(tx),
-        hash:      Hash::default(),
-        chain_id:  Some(5u64),
-        signature: None,
-    };
+    let utx =
+        UnverifiedTransaction {
+            unsigned:  UnsignedTransaction::Eip1559(tx),
+            hash:      Hash::default(),
+            chain_id:  Some(5u64),
+            signature: None,
+        };
 
     SignedTransaction {
         transaction: utx,

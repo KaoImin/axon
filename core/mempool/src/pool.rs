@@ -10,7 +10,9 @@ use dashmap::DashMap;
 use parking_lot::{Mutex, RwLock};
 
 use protocol::tokio::{self, time::sleep};
-use protocol::types::{BlockNumber, Bytes, Hash, PackedTxHashes, SignedTransaction, H160, U256};
+use protocol::types::{
+    BlockNumber, Bytes, Hash, PackedTxHashes, SignedTransaction, H160, U256, U64,
+};
 use protocol::{ProtocolResult, MEMPOOL_REFRESH_TIMEOUT};
 
 use crate::tx_wrapper::{PendingQueue, TxPtr, TxWrapper};
@@ -19,7 +21,7 @@ use crate::MemPoolError;
 pub struct PriorityPool {
     sys_tx_bucket:          BuiltInContractTxBucket,
     pending_queue:          Arc<DashMap<H160, PendingQueue>>,
-    co_queue:               Arc<ArrayQueue<(TxPtr, U256)>>,
+    co_queue:               Arc<ArrayQueue<(TxPtr, U64)>>,
     real_queue:             Arc<Mutex<Vec<TxPtr>>>,
     tx_map:                 DashMap<Hash, TxPtr>,
     stock_len:              AtomicUsize,
@@ -99,7 +101,7 @@ impl PriorityPool {
         &self,
         stx: SignedTransaction,
         check_limit: bool,
-        check_nonce: U256,
+        check_nonce: U64,
     ) -> ProtocolResult<()> {
         if let Err(n) = self
             .stock_len
@@ -238,7 +240,7 @@ impl PriorityPool {
         let mut q = self.real_queue.lock();
         let mut timeout_gap = self.timeout_gap.lock();
 
-        let mut remove_tip_nonce: HashMap<H160, U256> = HashMap::new();
+        let mut remove_tip_nonce: HashMap<H160, U64> = HashMap::new();
         for hash in hashes {
             if let Some((_, ptr)) = self.tx_map.remove(hash) {
                 match remove_tip_nonce.entry(ptr.sender()) {
