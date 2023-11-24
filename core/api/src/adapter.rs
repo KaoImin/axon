@@ -202,15 +202,14 @@ where
             .map(|p| U256::from(p.low_u64()))
             .unwrap_or_else(U256::one);
 
-        let backend =
-            AxonExecutorReadOnlyAdapter::from_root(
-                state_root,
-                Arc::clone(&self.trie_db),
-                Arc::clone(&self.storage),
-                exec_ctx,
-            )?;
+        let backend = AxonExecutorReadOnlyAdapter::from_root(
+            state_root,
+            Arc::clone(&self.trie_db),
+            Arc::clone(&self.storage),
+            exec_ctx,
+        )?;
         let gas_limit = gas_limit
-            .map(|gas| gas.as_u64())
+            .map(|gas| gas.low_u64())
             .unwrap_or(MAX_BLOCK_GAS_LIMIT);
 
         Ok(AxonExecutor.call(&backend, gas_limit, from, to, value, data))
@@ -280,9 +279,9 @@ where
                     .get(hash.as_bytes())?
                     .map(|v| H256::from_slice(&v))
                     .ok_or_else(|| {
-                        Into::<ProtocolError>::into(
-                            APIError::Adapter("Can't find this position".to_string())
-                        )
+                        Into::<ProtocolError>::into(APIError::Adapter(
+                            "Can't find this position".to_string(),
+                        ))
                     })?,
                 proof: storage_mpt_tree
                     .get_proof(hash.as_bytes())?
